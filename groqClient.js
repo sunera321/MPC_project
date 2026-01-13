@@ -3,6 +3,7 @@ import { PROMPT_TEMPLATE } from "./prompt.js";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
+  console.log("ok")
 });
 
 function safeExtractJSON(text) {
