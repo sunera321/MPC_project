@@ -7,7 +7,7 @@ export async function fetchHeadlines() {
     "https://feeds.bbci.co.uk/news/business/rss.xml"
   );
 
-  return feed.items.slice(0, 10).map(item => ({
+  return feed.items.slice(0, 12).map(item => ({
     title: item.title || "",
     description: item.contentSnippet || item.description || ""
   }));

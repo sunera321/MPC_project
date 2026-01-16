@@ -1,9 +1,11 @@
 import Groq from "groq-sdk";
 import { PROMPT_TEMPLATE } from "./prompt.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
-
 });
 
 function safeExtractJSON(text) {
@@ -32,7 +34,7 @@ export async function analyzeWithGroq(news) {
     model: "llama-3.1-8b-instant",
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
-    max_tokens: 1200
+    max_tokens: 1500
   });
 
   const raw = response.choices[0]?.message?.content;
