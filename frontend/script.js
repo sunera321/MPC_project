@@ -6,7 +6,7 @@ const refreshBtn = document.getElementById("refreshBtn");
 const viewButtons = document.querySelectorAll(".view-btn");
 
 let nextUpdateTime;
-const UPDATE_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const UPDATE_INTERVAL = 60 * 60 * 1000; // 5 minutes
 
 async function fetchNews() {
   try {
