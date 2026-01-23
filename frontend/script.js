@@ -13,7 +13,7 @@ async function fetchNews() {
     refreshBtn.disabled = true;
     refreshBtn.style.opacity = '0.6';
     
-    const res = await fetch("/analyze-news");
+    const res = await fetch("http://localhost:3000/analyze-news");
     const data = await res.json();
 
     // Update stats
