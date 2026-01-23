@@ -1,0 +1,7 @@
+# Python dependencies for MPC Project
+# Install with: pip install -r requirements.txt
+
+python-dotenv==1.0.0
+requests==2.31.0
+feedparser==6.0.11
+groq==0.4.2
