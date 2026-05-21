@@ -11,18 +11,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3022;
 
 app.use(express.json());
 app.use(cors());
 
 // Serve static files from the frontend directory
 app.use(express.static(path.join(__dirname, "frontend")));
-/**
- * GET /analyze-news
- * Fetches BBC RSS news and explains Sri Lanka impact per news item
- */
-app.get("/analyze-news", async (req, res) => {
+
+async function handleAnalyzeNews(req, res) {
   try {
     // 1. Fetch news (title + description)
     const news = await fetchHeadlines();
@@ -45,9 +42,16 @@ app.get("/analyze-news", async (req, res) => {
       message: "Please try again later"
     });
   }
-});
+}
+
+/**
+ * GET /analyze-news
+ * GET /api/analyze-news
+ * Fetches BBC RSS news and explains Sri Lanka impact per news item
+ */
+app.get("/analyze-news", handleAnalyzeNews);
+app.get("/api/analyze-news", handleAnalyzeNews);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
-

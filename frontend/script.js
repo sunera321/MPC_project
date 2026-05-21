@@ -5,27 +5,65 @@ const updateTimer = document.getElementById("updateTimer");
 const refreshBtn = document.getElementById("refreshBtn");
 const viewButtons = document.querySelectorAll(".view-btn");
 
+const API_ENDPOINTS = ["/api/analyze-news", "/analyze-news"];
+const UPDATE_INTERVAL = 60 * 60 * 1000; // 1 hour
+
+let countdownInterval;
 let nextUpdateTime;
-const UPDATE_INTERVAL = 60 * 60 * 1000; // 5 minutes
+
+async function fetchNewsAnalysis() {
+  let lastError;
+
+  for (const endpoint of API_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, {
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
+      const contentType = res.headers.get("content-type") || "";
+      const isJson = contentType.includes("application/json");
+      const payload = isJson ? await res.json() : await res.text();
+
+      if (!res.ok) {
+        const message =
+          isJson && payload?.message
+            ? payload.message
+            : `Request failed with status ${res.status}`;
+        throw new Error(message);
+      }
+
+      if (!isJson || !Array.isArray(payload?.newsAnalysis)) {
+        throw new Error(`Invalid response from ${endpoint}`);
+      }
+
+      return payload;
+    } catch (error) {
+      lastError = error;
+      console.warn(`News fetch failed for ${endpoint}:`, error);
+    }
+  }
+
+  throw lastError || new Error("Unable to load news analysis");
+}
 
 async function fetchNews() {
   try {
     refreshBtn.disabled = true;
-    refreshBtn.style.opacity = '0.6';
-    
-    // Use relative path for both local dev and production
-    const res = await fetch("/api/analyze-news");
-    const data = await res.json();
+    refreshBtn.style.opacity = "0.6";
+
+    const data = await fetchNewsAnalysis();
 
     // Update stats
     newsCount.textContent = data.newsAnalysis.length;
-    
-    const updateTime = new Date(data.lastUpdated);
-    const formattedTime = updateTime.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+
+    const updateTime = new Date(data.lastUpdated || Date.now());
+    const formattedTime = updateTime.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
     lastUpdated.textContent = formattedTime;
 
@@ -34,10 +72,10 @@ async function fetchNews() {
     updateCountdown();
 
     // Clear loading with fade effect
-    container.style.opacity = '0';
+    container.style.opacity = "0";
     setTimeout(() => {
       container.innerHTML = "";
-      
+
       // Create news cards with staggered animation
       data.newsAnalysis.forEach((item, index) => {
         const card = document.createElement("div");
@@ -63,12 +101,11 @@ async function fetchNews() {
         container.appendChild(card);
       });
 
-      container.style.opacity = '1';
+      container.style.opacity = "1";
     }, 300);
 
     refreshBtn.disabled = false;
-    refreshBtn.style.opacity = '1';
-
+    refreshBtn.style.opacity = "1";
   } catch (err) {
     container.innerHTML = `
       <div class="loading">
@@ -83,57 +120,58 @@ async function fetchNews() {
     `;
     console.error(err);
     refreshBtn.disabled = false;
-    refreshBtn.style.opacity = '1';
+    refreshBtn.style.opacity = "1";
   }
 }
 
 // Countdown timer for next update
 function updateCountdown() {
-  setInterval(() => {
+  clearInterval(countdownInterval);
+
+  countdownInterval = setInterval(() => {
     const now = Date.now();
     const remaining = Math.max(0, nextUpdateTime - now);
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
-    updateTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    updateTimer.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
   }, 1000);
 }
 
 // Helper function to escape HTML and prevent XSS
 function escapeHtml(text) {
-  const div = document.createElement('div');
+  const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
 
 // Refresh button handler
-refreshBtn.addEventListener('click', () => {
+refreshBtn.addEventListener("click", () => {
   fetchNews();
 });
 
 // View toggle handler
 viewButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    viewButtons.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
+  btn.addEventListener("click", () => {
+    viewButtons.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
     const view = btn.dataset.view;
-    if (view === 'list') {
-      container.classList.add('list-view');
+    if (view === "list") {
+      container.classList.add("list-view");
     } else {
-      container.classList.remove('list-view');
+      container.classList.remove("list-view");
     }
   });
 });
 
 // Smooth scroll behavior
-document.documentElement.style.scrollBehavior = 'smooth';
+document.documentElement.style.scrollBehavior = "smooth";
 
 // Add transition to container
-container.style.transition = 'opacity 0.3s ease-in-out';
+container.style.transition = "opacity 0.3s ease-in-out";
 
 // Initial fetch
 fetchNews();
 
-// Auto-refresh every 5 minutes
+// Auto-refresh every hour
 setInterval(fetchNews, UPDATE_INTERVAL);
-

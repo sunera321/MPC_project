@@ -4,6 +4,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const FALLBACK_IMPACT =
+  "This development could affect Sri Lanka indirectly through trade, prices, external demand, investor sentiment, or policy spillovers, but the model could not produce a more specific structured analysis for this item.";
+
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
@@ -23,6 +26,30 @@ function safeExtractJSON(text) {
   }
 }
 
+function normalizeAnalysis(news, parsed) {
+  if (!Array.isArray(parsed?.newsAnalysis)) {
+    return {
+      newsAnalysis: news.map(item => ({
+        title: item.title,
+        description: item.description,
+        sriLankaImpact: FALLBACK_IMPACT
+      }))
+    };
+  }
+
+  return {
+    newsAnalysis: news.map((item, index) => {
+      const analysisItem = parsed.newsAnalysis[index] ?? {};
+
+      return {
+        title: analysisItem.title || item.title,
+        description: analysisItem.description || item.description,
+        sriLankaImpact: analysisItem.sriLankaImpact || FALLBACK_IMPACT
+      };
+    })
+  };
+}
+
 export async function analyzeWithGroq(news) {
   const newsText = news
     .map(n => `- ${n.title}: ${n.description}`)
@@ -40,15 +67,5 @@ export async function analyzeWithGroq(news) {
   const raw = response.choices[0]?.message?.content;
   const parsed = safeExtractJSON(raw);
 
-  // ✅ Final fallback (NEVER FAIL)
-  if (!parsed) {
-    return {
-      sinhalaHeading: "මෙම පුවත් සඳහා සරල සාරාංශයක් ලබා ගැනීමට නොහැකි විය",
-      sriLankaImpact:
-        "මෙම පුවත් ශ්‍රී ලංකාවට සෘජු හෝ පරෝක්ෂ බලපෑමක් ඇති විය හැකි නමුත්, දත්ත ප්‍රමාණය සීමිතය."
-    };
-  }
-
-  return parsed;
+  return normalizeAnalysis(news, parsed);
 }
-
